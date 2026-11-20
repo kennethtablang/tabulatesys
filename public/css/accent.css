@@ -1,0 +1,100 @@
+/*
+ * Highlight colour for the whole system (Settings → Appearance).
+ * Overrides Inspinia/Bootstrap's built-in green with the --accent variables printed in the page head.
+ * Loaded last. Status colours (success/warning/danger) are intentionally left alone.
+ */
+:root { --accent: #1ab394; --accent-rgb: 26, 179, 148; --accent-fill: #1ab394; --accent-on: #16181b; --accent-hover: #189e83; --accent-active: #158c74; --accent-contrast: #16181b; --accent-ink: #11806a; }
+
+/* Buttons */
+.btn-primary,
+.btn-primary.disabled, .btn-primary:disabled { background-color: var(--accent-fill); border-color: var(--accent-fill); color: var(--accent-on); }
+.btn-primary:hover, .btn-primary:focus, .btn-primary.focus { background-color: var(--accent-hover); border-color: var(--accent-hover); color: var(--accent-on); }
+.btn-primary:not(:disabled):not(.disabled):active, .btn-primary:not(:disabled):not(.disabled).active,
+.show > .btn-primary.dropdown-toggle, .btn-primary.active, .btn-primary:active,
+.btn-primary:active:focus, .btn-primary:active:hover, .btn-primary.active:hover, .btn-primary.active:focus {
+    background-color: var(--accent-active); border-color: var(--accent-active); color: var(--accent-on);
+}
+.btn-primary:focus, .btn-primary.focus, .btn-primary:not(:disabled):not(.disabled):active:focus { box-shadow: 0 0 0 .2rem rgba(var(--accent-rgb), .4); }
+.btn-primary.btn-outline { color: var(--accent); background: transparent; }
+.btn-primary.btn-outline:hover { color: var(--accent-on); background: var(--accent-fill); }
+.btn-link, .btn-link:hover { color: var(--accent-ink); }
+
+/* Badges, labels, backgrounds, text */
+.badge-primary, .label-primary, .bg-primary, .navy-bg { background-color: var(--accent-fill) !important; color: var(--accent-on) !important; }
+.text-navy { color: var(--accent-ink) !important; }
+.progress-bar { background-color: var(--accent); }
+.pace .pace-progress { background: var(--accent); }
+
+/* Navigation */
+.nav > li.active { border-left-color: var(--accent); }
+.navbar-minimalize.btn-primary { background-color: var(--accent-fill); border-color: var(--accent-fill); color: var(--accent-on); }
+.page-item.active .page-link, .pagination > .active > a { background-color: var(--accent-fill); border-color: var(--accent-fill); color: var(--accent-on); }
+.dropdown-item.active, .dropdown-item:active { background-color: var(--accent-fill); color: var(--accent-on); }
+a.list-group-item.active, a.list-group-item.active:hover, a.list-group-item.active:focus { background-color: var(--accent-fill); border-color: var(--accent-fill); color: var(--accent-on); }
+
+/* Form focus */
+.form-control:focus, .single-line:focus, .custom-select:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 .15rem rgba(var(--accent-rgb), .2); }
+input[type=checkbox], input[type=radio] { accent-color: var(--accent); }
+
+/* Toast "info" notices use the highlight too (success/error/warning keep their meaning) */
+.toast-info { background-color: var(--accent-fill); }
+.toast-info, .toast-info .toast-message, .toast-info .toast-title, .toast-info .toast-close-button { color: var(--accent-on); }
+
+/* Selected item in the sidebar: tinted with the highlight so it never blends into the menu */
+.nav > li.active { background: rgba(var(--accent-rgb), .16) !important; }
+.nav > li.active > a, .nav > li.active > a:hover { color: #ffffff !important; }
+.nav-second-level li.active > a, .nav-second-level li a:hover { color: #ffffff !important; font-weight: 600; }
+.nav-second-level li.active > a::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin: 0 8px 1px -14px; }
+
+/* Status buttons and medals with readable text (WCAG 4.5:1), both themes */
+.btn-warning, .btn-warning:hover, .btn-warning:focus, .btn-warning:active, .btn-warning.active { color: #16181b !important; }
+.btn-success { background-color: #1a77b3; border-color: #1a77b3; color: #fff; }
+.btn-success:hover, .btn-success:focus, .btn-success:active, .btn-success.active { background-color: #166599; border-color: #166599; color: #fff; }
+.btn-danger { background-color: #cb4956; border-color: #cb4956; color: #fff; }
+.btn-danger:hover, .btn-danger:focus, .btn-danger:active, .btn-danger.active { background-color: #b23b48; border-color: #b23b48; color: #fff; }
+.btn-info { background-color: #177d7e; border-color: #177d7e; color: #fff; }
+.btn-info:hover, .btn-info:focus { background-color: #12696a; border-color: #12696a; color: #fff; }
+.badge-danger, .label-danger { background-color: #cb4956; color: #fff; }
+.badge-warning, .label-warning { color: #16181b; }
+.rank-1 { background: #f8c600; color: #16181b !important; }
+.rank-2 { background: #717178; color: #fff; }
+.rank-3 { background: #a6682e; color: #fff; }
+html[data-theme="dark"] .rank-1 { background-color: #c9a100; color: #16181b !important; }
+html[data-theme="dark"] .rank-2 { background-color: #717178; }
+html[data-theme="dark"] .rank-3 { background-color: #9a5f2a; }
+
+/* Readable greys on the light theme (Inspinia's defaults were below 4.5:1) */
+.text-muted { color: #646a70 !important; }
+.navbar-top-links li a { color: #5f6366; }
+.navbar-top-links li a:hover { color: #2f3235; }
+.score-sheet thead th small, .event-meta, .viz-axis, .viz-ramp-legend, .credential-slip .slip-title,
+.logo-band-subtitle, .results-table .judge-rank, .viz-heat td.viz-heat-empty { color: #646a70; }
+html[data-theme="dark"] .score-sheet thead th small, html[data-theme="dark"] .event-meta, html[data-theme="dark"] .viz-axis,
+html[data-theme="dark"] .viz-ramp-legend, html[data-theme="dark"] .credential-slip .slip-title,
+html[data-theme="dark"] .logo-band-subtitle, html[data-theme="dark"] .results-table .judge-rank,
+html[data-theme="dark"] .viz-heat td.viz-heat-empty { color: var(--tms-muted); }
+html[data-theme="dark"] .navbar-top-links li a { color: var(--tms-muted); }
+html[data-theme="dark"] .navbar-top-links li a:hover { color: var(--tms-heading); }
+html[data-theme="dark"] .page-item.disabled .page-link { color: #8b939d; }
+.nav.navbar-right > li > a, .navbar-top-links li a { color: #5f6366; }
+html[data-theme="dark"] .nav.navbar-right > li > a { color: var(--tms-muted); }
+.ibox-tools a.btn-primary, .ibox-tools a.btn-primary:hover { color: var(--accent-on) !important; }
+.text-danger { color: #c53444 !important; }
+code { color: #b02a5b; }
+html[data-theme="dark"] code { color: #f3b0cf; }
+
+/* Dashboard tiles and leftover Inspinia colours, made readable */
+.lazur-bg { background-color: #177d7e !important; color: #fff !important; }
+.yellow-bg { background-color: #f8ac59 !important; color: #16181b !important; }
+.red-bg { background-color: #cb4956 !important; color: #fff !important; }
+.widget.lazur-bg *, .widget.red-bg * { color: #fff; }
+.widget.yellow-bg * { color: #16181b; }
+.wrapper-content a:not(.btn):not(.dropdown-item):not(.page-link):not(.list-group-item) { color: #1a6aa8; }
+.wrapper-content a:not(.btn):not(.dropdown-item):not(.page-link):not(.list-group-item):hover { color: #124d7b; }
+.ibox-tools a.btn-white { color: #3f444a !important; }
+html[data-theme="dark"] .ibox-tools a.btn-white { color: var(--tms-text) !important; }
+
+/* Text on the highlight-coloured tiles follows the readable "on" colour, in both themes */
+.navy-bg, .navy-bg h1, .navy-bg h2, .navy-bg h3, .navy-bg h4, .navy-bg h5, .navy-bg span, .navy-bg small, .navy-bg i,
+html[data-theme="dark"] .navy-bg h1, html[data-theme="dark"] .navy-bg h2, html[data-theme="dark"] .navy-bg h3,
+html[data-theme="dark"] .navy-bg h4, html[data-theme="dark"] .navy-bg h5, html[data-theme="dark"] .navy-bg strong { color: var(--accent-on) !important; }

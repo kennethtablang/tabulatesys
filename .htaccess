@@ -1,0 +1,16 @@
+# This project lives inside XAMPP's htdocs, so Apache can see the whole folder.
+# Only the public/ folder may be served on the network. Everything else (.env, the SQLite
+# database with all scores and passwords, source code, vendor/) is blocked.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # http://<server-ip>/tabulatesys/  ->  the application
+    RewriteRule ^$ %{REQUEST_URI}public/ [R=302,L]
+
+    RewriteRule ^(?!public(/|$)) - [F,L]
+</IfModule>
+
+# Fallback if mod_rewrite is ever disabled.
+<FilesMatch "(^\.env|\.sqlite|\.sqlite-wal|\.sqlite-shm|composer\.(json|lock)|artisan)$">
+    Require all denied
+</FilesMatch>
