@@ -31,6 +31,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'event_id' => 'integer',
+            'notifications_read_id' => 'integer',
         ];
     }
 

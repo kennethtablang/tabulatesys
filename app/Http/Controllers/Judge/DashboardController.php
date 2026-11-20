@@ -30,7 +30,10 @@ class DashboardController extends Controller
         }
         \App\Support\LiveDisplay::markSeen($judge, $eventId, mb_substr((string) $request->query('page', ''), 0, 60));
 
-        return response()->json(['token' => \App\Support\LiveDisplay::token(\App\Support\LiveDisplay::eventIdsFor($judge, $eventId), $judge)])
+        return response()->json([
+            'token' => \App\Support\LiveDisplay::token(\App\Support\LiveDisplay::eventIdsFor($judge, $eventId), $judge),
+            'locked' => \App\Support\ScreenLock::isLocked($judge, $eventId),
+        ])
             ->header('Cache-Control', 'no-store');
     }
 

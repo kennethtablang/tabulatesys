@@ -17,6 +17,8 @@ class ActivityLog extends Model
         'account' => 'Accounts',
         'round' => 'Round',
         'settings' => 'Settings',
+        'lock' => 'Screen lock',
+        'scoring' => 'Started scoring',
     ];
 
     protected $fillable = ['user_id', 'event_id', 'user_name', 'action', 'description', 'ip_address'];

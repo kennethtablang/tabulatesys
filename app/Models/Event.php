@@ -28,7 +28,7 @@ class Event extends Model
      */
     public const STATUSES = ['draft' => 'Inactive', 'ongoing' => 'Active', 'completed' => 'Completed'];
 
-    protected $fillable = ['name', 'type', 'description', 'venue', 'event_date', 'scoring_method', 'status', 'sheet_layout'];
+    protected $fillable = ['name', 'type', 'description', 'banner', 'venue', 'event_date', 'scoring_method', 'status', 'sheet_layout'];
 
     protected function casts(): array
     {
@@ -40,7 +40,15 @@ class Event extends Model
         // Accounts generated for this event only (its tabulators) go away with it.
         static::deleting(function (Event $event) {
             User::where('event_id', $event->id)->get()->each->delete();
+            if ($event->banner) {
+                \Illuminate\Support\Facades\File::delete(public_path('uploads/'.$event->banner));
+            }
         });
+    }
+
+    public function bannerUrl(): ?string
+    {
+        return $this->banner ? asset('uploads/'.$this->banner) : null;
     }
 
     public function isActive(): bool

@@ -336,3 +336,54 @@ html[data-theme="dark"] .logo-item, html[data-theme="dark"] .logo-options { bord
 .logo-height-preview { display: flex; align-items: center; justify-content: flex-end; gap: 16px; min-height: 60px; padding: 8px 12px; border: 1px dashed #c9ced3; border-radius: 6px; overflow-x: auto; }
 .logo-height-preview img { height: calc(var(--preview-h, 96px) * var(--logo-scale, 1)); object-fit: contain; }
 html[data-theme="dark"] .logo-height-preview { border-color: var(--tms-border); }
+
+/* Line the heading up with the panels below it: #page-wrapper padding (15px) + .wrapper-content padding (10px) */
+.page-heading.page-heading-flex { padding-left: 25px; padding-right: 25px; }
+.page-heading-flex .heading-logos { padding-top: 14px; padding-bottom: 14px; }
+.page-heading-flex .heading-main { padding-top: 2px; }
+
+/* ---------- Judge screen lock ---------- */
+.screen-lock { position: fixed; inset: 0; z-index: 4000; display: none; align-items: center; justify-content: center;
+    background: rgba(15, 18, 22, .86); backdrop-filter: blur(6px); padding: 16px; }
+.screen-lock.show { display: flex; }
+.screen-lock-box { max-width: 460px; text-align: center; color: #f0f2f5; }
+.screen-lock-icon { width: 96px; height: 96px; border-radius: 50%; margin: 0 auto 18px; display: flex; align-items: center; justify-content: center;
+    background: var(--accent-fill); color: var(--accent-on); font-size: 44px; box-shadow: 0 0 0 10px rgba(var(--accent-rgb), .2); }
+.screen-lock-box h2 { color: #fff; font-size: 30px; font-weight: 700; margin: 0 0 10px; }
+.screen-lock-box p { font-size: 16px; line-height: 1.5; color: #d6dbe0; }
+.screen-lock-hint { color: #aab3bd; }
+body.is-screen-locked { overflow: hidden; }
+.lock-badge { display: inline-block; font-size: 11px; font-weight: 600; color: #cb4956; }
+html[data-theme="dark"] .lock-badge { color: #ff8591; }
+
+/* ---------- Event banner ---------- */
+.event-banner { margin-bottom: 15px; border-radius: 6px; overflow: hidden; background: #1e2229; }
+.event-banner img { display: block; width: 100%; max-height: 300px; object-fit: cover; }
+.event-banner-slim img { max-height: 120px; }
+.event-banner-card { margin: 0; border-radius: 4px 4px 0 0; }
+.event-banner-card img { height: 110px; max-height: none; }
+.event-banner-preview { border: 1px dashed #c9ced3; border-radius: 6px; min-height: 90px; display: flex; align-items: center; justify-content: center; overflow: hidden; text-align: center; }
+.event-banner-preview img { display: block; width: 100%; max-height: 220px; object-fit: cover; }
+.event-banner-preview.is-empty { padding: 18px; }
+html[data-theme="dark"] .event-banner-preview { border-color: var(--tms-border); }
+
+/* ---------- Notification bell ---------- */
+.notif-bell .count-info { position: relative; }
+.notif-bell .notif-count { position: absolute; top: 10px; right: 2px; padding: 2px 5px; font-size: 10px; line-height: 1; border-radius: 8px; }
+.notif-bell .fa-bell { font-size: 16px; }
+.notif-bell.is-ringing .fa-bell { animation: bell-ring 1s ease-in-out 2; transform-origin: 50% 0; color: var(--accent-ink); }
+@keyframes bell-ring { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(18deg); } 30% { transform: rotate(-16deg); } 45% { transform: rotate(12deg); } 60% { transform: rotate(-8deg); } 75% { transform: rotate(4deg); } }
+.notif-menu { width: 340px; padding: 0; max-height: 480px; display: none; flex-direction: column; }
+.notif-bell.show .notif-menu { display: flex; }
+.notif-head { padding: 10px 12px; border-bottom: 1px solid #e7eaec; }
+.notif-list { overflow-y: auto; max-height: 380px; }
+.notif-item { display: flex; gap: 10px; padding: 9px 12px; border-bottom: 1px solid #f1f2f3; font-size: 12.5px; line-height: 1.35; }
+.notif-item i { margin-top: 2px; }
+.notif-item.is-unread { background: rgba(var(--accent-rgb), .08); }
+.notif-empty { padding: 16px 12px; }
+.notif-foot { display: block; padding: 9px 12px; text-align: center; border-top: 1px solid #e7eaec; font-weight: 600; }
+html[data-theme="dark"] .notif-head, html[data-theme="dark"] .notif-item, html[data-theme="dark"] .notif-foot { border-color: var(--tms-border); }
+html[data-theme="dark"] .notif-item b { color: var(--tms-heading); }
+@media (max-width: 576px) { .notif-menu { width: 290px; } }
+.notif-menu { color: #2f3235; }
+html[data-theme="dark"] .notif-menu { color: var(--tms-text); }

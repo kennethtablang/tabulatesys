@@ -8,6 +8,7 @@
     @php($categories = $event->rounds->flatMap->categories)
     @php($open = $categories->where('status', 'open'))
     <div class="ibox">
+        @include('partials.event_banner', ['event' => $event, 'class' => 'event-banner-card'])
         <div class="ibox-title">
             <h5><span class="badge {{ $event->statusBadge() }}">{{ $event->statusLabel() }}</span> {{ $event->name }} <small class="m-l-sm">{{ $event->typeLabel() }} · {{ $event->judges->count() }} judge(s)</small></h5>
             <div class="ibox-tools">

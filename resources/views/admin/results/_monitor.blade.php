@@ -14,10 +14,19 @@
                         <th>Category</th>
                         @foreach($event->judges as $judge)
                             @php($online = \App\Support\LiveDisplay::isOnline($judge))
+                            @php($judgeLocked = \App\Support\ScreenLock::isLocked($judge, $event->id))
                             <th>{{ $judge->name }}<br>
                                 <small class="{{ $online ? 'text-navy' : 'text-muted' }}" title="{{ $online ? 'Screen connected' : 'Not connected right now' }}">
                                     <span class="online-dot {{ $online ? 'is-online' : '' }}"></span> {{ $online ? 'Online' : 'Offline' }}
                                 </small>
+                                @if($judgeLocked)<span class="lock-badge d-block"><i class="fa fa-lock"></i> Locked</span>@endif
+                                @php($ownLock = \App\Support\ScreenLock::judgeLocked($judge))
+                                <form method="POST" action="{{ route('admin.judges.lock') }}" class="m-t-xs">
+                                    @csrf <input type="hidden" name="scope" value="judge"><input type="hidden" name="judge" value="{{ $judge->id }}">
+                                    <input type="hidden" name="event" value="{{ $event->id }}"><input type="hidden" name="lock" value="{{ $ownLock ? 0 : 1 }}">
+                                    <button class="btn btn-xs {{ $ownLock ? 'btn-warning' : 'btn-white' }}" title="{{ $ownLock ? 'Unlock this judge\'s screen' : 'Lock this judge\'s screen' }}">
+                                        <i class="fa {{ $ownLock ? 'fa-unlock' : 'fa-lock' }}"></i> {{ $ownLock ? 'Unlock screen' : 'Lock screen' }}</button>
+                                </form>
                             </th>
                         @endforeach
                         <th style="width:110px">Control</th>

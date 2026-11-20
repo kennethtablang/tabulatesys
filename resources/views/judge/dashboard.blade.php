@@ -16,6 +16,7 @@
             @php($open = $event->rounds->flatMap->categories->where('status', 'open'))
             <div class="col-md-6 col-xl-4">
                 <div class="ibox event-card">
+                    @include('partials.event_banner', ['event' => $event, 'class' => 'event-banner-card'])
                     <div class="ibox-title">
                         <span class="badge {{ $event->statusBadge() }} float-right">{{ $event->statusLabel() }}</span>
                         <h5>{{ $event->typeLabel() }}</h5>

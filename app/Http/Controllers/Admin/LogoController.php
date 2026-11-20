@@ -116,6 +116,7 @@ class LogoController extends Controller
         File::ensureDirectoryExists(public_path('uploads/logos'));
         $name = Str::uuid().'.'.strtolower($file->getClientOriginalExtension() ?: $file->extension());
         $file->move(public_path('uploads/logos'), $name);
+        \App\Support\ImageOptimizer::shrink(public_path('uploads/logos/'.$name), 800);   // keep exports and pages light
 
         return 'logos/'.$name;
     }

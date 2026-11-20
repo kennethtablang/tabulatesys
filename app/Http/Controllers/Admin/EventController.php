@@ -30,6 +30,7 @@ class EventController extends Controller
     public function store(Request $request)
     {
         $data = $this->validated($request);
+        $data['banner'] = $this->storeBanner($request);
         $event = Event::create($data);
 
         // Every event starts with one round so categories can be added immediately.
@@ -56,7 +57,15 @@ class EventController extends Controller
 
     public function update(Request $request, Event $event)
     {
-        $event->update($this->validated($request));
+        $data = $this->validated($request);
+        if ($request->hasFile('banner')) {
+            $this->deleteBanner($event);
+            $data['banner'] = $this->storeBanner($request);
+        } elseif ($request->boolean('remove_banner')) {
+            $this->deleteBanner($event);
+            $data['banner'] = null;
+        }
+        $event->update($data);
         $event->logos()->sync($this->logoIds($request));
         \App\Support\LiveDisplay::touch();
         ActivityLog::record('event', 'Edited event details.', $event);
@@ -88,6 +97,27 @@ class EventController extends Controller
         return redirect()->route('admin.events.index')->with('success', 'Event deleted.');
     }
 
+    protected function storeBanner(Request $request): ?string
+    {
+        if (! $request->hasFile('banner')) {
+            return null;
+        }
+        $file = $request->file('banner');
+        \Illuminate\Support\Facades\File::ensureDirectoryExists(public_path('uploads/banners'));
+        $name = \Illuminate\Support\Str::uuid().'.'.strtolower($file->getClientOriginalExtension() ?: $file->extension());
+        $file->move(public_path('uploads/banners'), $name);
+        \App\Support\ImageOptimizer::shrink(public_path('uploads/banners/'.$name), 1920);
+
+        return 'banners/'.$name;
+    }
+
+    protected function deleteBanner(Event $event): void
+    {
+        if ($event->banner) {
+            \Illuminate\Support\Facades\File::delete(public_path('uploads/'.$event->banner));
+        }
+    }
+
     protected function logoIds(Request $request): array
     {
         return \App\Models\Logo::where('show_on_all', false)
@@ -106,6 +136,7 @@ class EventController extends Controller
             'scoring_method' => ['required', Rule::in(array_keys(Event::METHODS))],
             'status' => ['required', Rule::in(array_keys(Event::STATUSES))],
             'sheet_layout' => ['nullable', Rule::in(array_keys(\App\Support\JudgeDisplay::LAYOUTS))],
+            'banner' => ['nullable', 'file', 'mimes:png,jpg,jpeg,webp,gif', 'max:8192'],
         ]);
     }
 }

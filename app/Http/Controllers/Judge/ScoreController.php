@@ -154,6 +154,9 @@ class ScoreController extends Controller
         if ($old === $value) {
             return;
         }
+        if (! $existing && ! Score::where(['category_id' => $category->id, 'judge_id' => auth()->id()])->exists()) {
+            ActivityLog::record('scoring', 'Started scoring "'.$category->name.'".', $category->event);
+        }
 
         Score::updateOrCreate(
             ['criterion_id' => $criterionId, 'contestant_id' => $contestantId, 'judge_id' => auth()->id()],
@@ -188,6 +191,12 @@ class ScoreController extends Controller
 
     protected function ensureEditable(Category $category): void
     {
+        if (\App\Support\ScreenLock::isLocked(auth()->user(), $category->event_id)) {
+            throw new \Illuminate\Http\Exceptions\HttpResponseException(request()->expectsJson()
+                ? response()->json(['message' => \App\Support\ScreenLock::message(), 'screen_locked' => true], 423)
+                : back()->with('error', \App\Support\ScreenLock::message()));
+        }
+
         $submission = CategorySubmission::where('category_id', $category->id)->where('judge_id', auth()->id())->first();
 
         if (! $this->editable($category, $submission)) {

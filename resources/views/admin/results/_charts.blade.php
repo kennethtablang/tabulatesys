@@ -180,6 +180,7 @@ Judge rank: ".$fmt($row['judge_ranks'][$judge->id], 1) : '' }}">{{ $fmt($v, 1) }
 
         {{-- ================= Top 3: podium tiles ================= --}}
         @if($chart === 'podium')
+            @if($loop->first)@include('partials.event_banner', ['event' => $event])@endif
             @php($top = collect($rows)->filter(fn ($r) => $r['rank'] !== null && $r['rank'] <= 3)->values())
             <div class="ibox">
                 <div class="ibox-title"><h5><i class="fa fa-trophy text-warning"></i> {{ $division ? $division.' · ' : '' }}Top 3 · {{ $round->name }}</h5>

@@ -9,6 +9,13 @@
 
 @php($L = \App\Support\JudgeDisplay::class)
 @section('actions')
+    @php($allLocked = \App\Support\ScreenLock::allLocked())
+    <form method="POST" action="{{ route('admin.judges.lock') }}" class="d-inline js-confirm"
+          data-confirm="{{ $allLocked ? 'Unlock every judge\'s screen in every event?' : 'Lock every judge\'s screen in every event? Nobody can enter or change scores until you unlock.' }}"
+          data-type="warning" data-color="{{ $allLocked ? '#1ab394' : '#cb4956' }}" data-button="{{ $allLocked ? 'Unlock all' : 'Lock all' }}">
+        @csrf <input type="hidden" name="scope" value="all"><input type="hidden" name="lock" value="{{ $allLocked ? 0 : 1 }}">
+        <button class="btn {{ $allLocked ? 'btn-warning' : 'btn-white' }}"><i class="fa {{ $allLocked ? 'fa-unlock' : 'fa-lock' }}"></i> {{ $allLocked ? 'Unlock all judge screens' : 'Lock all judge screens' }}</button>
+    </form>
     <form method="POST" action="{{ route('admin.judges.refresh') }}" class="d-inline js-confirm"
           data-confirm="Reload every judge's screen now? Unsaved scores are saved first." data-type="info" data-color="#1ab394" data-button="Refresh now">
         @csrf

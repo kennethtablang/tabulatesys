@@ -17,6 +17,7 @@
 @endsection
 
 @section('content')
+@include('partials.event_banner', ['event' => $event])
 @include('admin.events._nav')
 
 @php($categories = $event->rounds->flatMap->categories)

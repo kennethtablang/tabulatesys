@@ -7,6 +7,14 @@
     <li class="breadcrumb-item active"><strong>Monitor</strong></li>
 @endsection
 @section('actions')
+    @php($eventLocked = \App\Support\ScreenLock::eventLocked($event))
+    <form method="POST" action="{{ route('admin.judges.lock') }}" class="d-inline js-confirm"
+          data-confirm="{{ $eventLocked ? 'Unlock the screens of every judge of this event?' : 'Lock the screens of every judge of this event? They cannot enter or change scores until you unlock.' }}"
+          data-type="warning" data-color="{{ $eventLocked ? '#1ab394' : '#cb4956' }}" data-button="{{ $eventLocked ? 'Unlock all' : 'Lock all' }}">
+        @csrf <input type="hidden" name="scope" value="event"><input type="hidden" name="event" value="{{ $event->id }}">
+        <input type="hidden" name="lock" value="{{ $eventLocked ? 0 : 1 }}">
+        <button class="btn {{ $eventLocked ? 'btn-warning' : 'btn-white' }}"><i class="fa {{ $eventLocked ? 'fa-unlock' : 'fa-lock' }}"></i> {{ $eventLocked ? 'Unlock all judge screens' : 'Lock all judge screens' }}</button>
+    </form>
     <form method="POST" action="{{ route('admin.judges.refresh') }}" class="d-inline js-confirm"
           data-confirm="Reload the screens of this event's judges now? Unsaved scores are saved first." data-type="info" data-color="#1ab394" data-button="Refresh now">
         @csrf <input type="hidden" name="event" value="{{ $event->id }}">

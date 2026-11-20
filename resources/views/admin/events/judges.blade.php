@@ -39,6 +39,12 @@
                                     @php($online = \App\Support\LiveDisplay::isOnline($judge))
                                     <br><small class="{{ $online ? 'text-navy' : 'text-muted' }}"><span class="online-dot {{ $online ? 'is-online' : '' }}"></span> {{ $online ? 'Online now' : 'Offline' }}</small></td>
                                 <td class="text-right" style="white-space:nowrap">
+                                    @php($ownLock = \App\Support\ScreenLock::judgeLocked($judge))
+                                    <form method="POST" action="{{ route('admin.judges.lock') }}" class="d-inline">
+                                        @csrf <input type="hidden" name="scope" value="judge"><input type="hidden" name="judge" value="{{ $judge->id }}">
+                                        <input type="hidden" name="event" value="{{ $event->id }}"><input type="hidden" name="lock" value="{{ $ownLock ? 0 : 1 }}">
+                                        <button class="btn btn-xs {{ $ownLock ? 'btn-warning' : 'btn-white' }}"><i class="fa {{ $ownLock ? 'fa-unlock' : 'fa-lock' }}"></i> {{ $ownLock ? 'Unlock screen' : 'Lock screen' }}</button>
+                                    </form>
                                     <form method="POST" action="{{ route('admin.users.reset-password', $judge) }}" class="d-inline js-confirm"
                                           data-confirm="Generate a new password for {{ $judge->name }}? The old password will stop working." data-type="info" data-color="#1ab394" data-button="Generate">
                                         @csrf

@@ -25,6 +25,9 @@ Route::middleware('auth')->group(function () {
         Route::get('events/{event}/results', [Admin\ResultController::class, 'index'])->name('events.results');
         Route::get('events/{event}/pulse', [Admin\ResultController::class, 'pulse'])->name('events.pulse');
         Route::post('judges/refresh', [Admin\ResultController::class, 'refreshJudges'])->name('judges.refresh');
+        Route::post('judges/lock', [Admin\ScreenLockController::class, 'update'])->name('judges.lock');
+        Route::get('notifications', [Admin\NotificationController::class, 'index'])->name('notifications');
+        Route::post('notifications/read', [Admin\NotificationController::class, 'read'])->name('notifications.read');
         Route::get('rounds/{round}/print', [Admin\ResultController::class, 'print'])->name('rounds.print');
         Route::get('rounds/{round}/export/excel', [Admin\ExportController::class, 'excel'])->name('rounds.export.excel');
         Route::get('rounds/{round}/export/pdf', [Admin\ExportController::class, 'pdf'])->name('rounds.export.pdf');

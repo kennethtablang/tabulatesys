@@ -9,10 +9,27 @@
         return (getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#1ab394').trim();
     };
 
-    // Logout links
+    // Logout links: ask first ("second thought"), and save a judge's pending scores before leaving.
     $(document).on('click', '.js-logout', function (e) {
         e.preventDefault();
-        $('#logout-form').trigger('submit');
+        swal({
+            title: 'Log out?',
+            text: 'Are you really sure you want to logout?',
+            type: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: window.tmsAccent ? window.tmsAccent() : '#1ab394',
+            confirmButtonText: 'Yes, log out',
+            cancelButtonText: 'Stay',
+            closeOnConfirm: true
+        }, function () {
+            var tries = 0;
+            (function go() {
+                var sheet = window.tmsSheet;
+                if (sheet && sheet.busy() && tries++ < 10) { sheet.flush(); return setTimeout(go, 500); }
+                window.tmsReloading = true;
+                $('#logout-form').trigger('submit');
+            })();
+        });
     });
 
     // Confirm destructive/important forms with SweetAlert:  <form class="js-confirm" data-confirm="...">
@@ -79,12 +96,78 @@
                 setTimeout(function () { location.reload(); }, 600);
             })();
         };
+        $('body').toggleClass('is-screen-locked', !!live.locked);
         setInterval(function () {
             if (reloading) { return; }
             $.ajax({url: live.url, cache: false, dataType: 'json', timeout: 5000}).done(function (res) {
-                if (res && res.token && res.token !== live.token) { safeReload(); }
+                if (!res) { return; }
+                if (typeof res.locked === 'boolean' && res.locked !== live.locked) {
+                    live.locked = res.locked;
+                    $('#screen-lock').toggleClass('show', res.locked);
+                    $('body').toggleClass('is-screen-locked', res.locked);
+                    if (res.locked && document.activeElement) { document.activeElement.blur(); }
+                    if (!res.locked && window.tmsSheet) { window.tmsSheet.flush(); }   // send anything typed before the lock
+                }
+                if (res.token && res.token !== live.token) { safeReload(); }
             });
         }, 3000);
+    }
+
+    // ---- Notification bell: rings when judges log in, start scoring, submit... ----
+    var $bell = $('#notif-bell');
+    if ($bell.length) {
+        var lastId = null, soundOn = true, audioCtx = null;
+        try { soundOn = localStorage.getItem('tms-bell-sound') !== 'off'; } catch (e) {}
+        var paintSound = function () { $bell.find('.notif-sound i').attr('class', 'fa ' + (soundOn ? 'fa-volume-up' : 'fa-volume-off')); };
+        paintSound();
+
+        var chime = function () {
+            if (!soundOn) { return; }
+            try {
+                audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+                [[880, 0], [1320, 0.16]].forEach(function (n) {
+                    var o = audioCtx.createOscillator(), g = audioCtx.createGain(), t = audioCtx.currentTime + n[1];
+                    o.type = 'sine'; o.frequency.value = n[0];
+                    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+                    o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t + 0.4);
+                });
+            } catch (e) { /* audio blocked until the user interacts with the page */ }
+        };
+        var esc = function (s) { return $('<div>').text(s == null ? '' : s).html(); };
+        var render = function (res) {
+            var $count = $bell.find('.notif-count');
+            $count.text(res.unread > 99 ? '99+' : res.unread).toggle(res.unread > 0);
+            if (!res.items.length) { return; }
+            $bell.find('.notif-list').html(res.items.map(function (n) {
+                return '<div class="notif-item' + (n.unread ? ' is-unread' : '') + '"><i class="fa ' + n.icon + ' ' + n.tone + ' fa-fw"></i>' +
+                    '<div><b>' + esc(n.who) + '</b> ' + esc(n.text) + (n.event ? '<small class="d-block text-muted">' + esc(n.event) + '</small>' : '') +
+                    '<small class="d-block text-muted">' + esc(n.ago) + '</small></div></div>';
+            }).join(''));
+        };
+        var poll = function () {
+            $.ajax({url: $bell.data('feed'), cache: false, dataType: 'json', timeout: 6000}).done(function (res) {
+                render(res);
+                if (lastId !== null && res.latest_id > lastId) {
+                    var fresh = res.items.filter(function (n) { return n.id > lastId; });
+                    $bell.removeClass('is-ringing'); void $bell[0].offsetWidth; $bell.addClass('is-ringing');
+                    chime();
+                    fresh.slice(0, 3).reverse().forEach(function (n) { toastr.info(n.who + ' ' + n.text + (n.event ? ' · ' + n.event : ''), 'Judge activity', {timeOut: 6000}); });
+                }
+                lastId = Math.max(lastId || 0, res.latest_id);
+            });
+        };
+        poll();
+        setInterval(poll, 5000);
+        $bell.on('show.bs.dropdown', function () {
+            $.post($bell.data('read')).done(function () { $bell.find('.notif-count').hide(); $bell.find('.notif-item').removeClass('is-unread'); });
+        });
+        $bell.on('click', '.notif-sound', function (e) {
+            e.stopPropagation();
+            soundOn = !soundOn;
+            try { localStorage.setItem('tms-bell-sound', soundOn ? 'on' : 'off'); } catch (err) {}
+            paintSound();
+            if (soundOn) { chime(); }
+        });
     }
 
     // Chart tooltips: any element with data-tip (works on hover and keyboard focus).

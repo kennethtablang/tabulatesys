@@ -8,6 +8,7 @@
 @endsection
 
 @section('content')
+@include('partials.event_banner', ['event' => $event])
 @php($me = auth()->id())
 @foreach($event->rounds as $round)
     <div class="ibox">

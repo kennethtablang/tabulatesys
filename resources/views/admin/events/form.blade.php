@@ -10,8 +10,18 @@
     <li class="breadcrumb-item active"><strong>{{ $editing ? 'Edit' : 'Add Event' }}</strong></li>
 @endsection
 
+@push('scripts')
+<script>
+    $('#banner-input').on('change', function () {
+        var file = this.files && this.files[0];
+        if (!file) { return; }
+        $('#banner-preview').removeClass('is-empty').html('<img src="' + URL.createObjectURL(file) + '" alt="New banner preview">');
+    });
+</script>
+@endpush
+
 @section('content')
-<form method="POST" action="{{ $editing ? route('admin.events.update', $event) : route('admin.events.store') }}">
+<form method="POST" action="{{ $editing ? route('admin.events.update', $event) : route('admin.events.store') }}" enctype="multipart/form-data">
     @csrf
     @if($editing) @method('PUT') @endif
     <div class="row">
@@ -45,6 +55,27 @@
                         <label>Description</label>
                         <textarea name="description" rows="3" class="form-control" placeholder="Optional notes, theme or mechanics">{{ old('description', $event->description) }}</textarea>
                     </div>
+                </div>
+            </div>
+
+            <div class="ibox">
+                <div class="ibox-title"><h5><i class="fa fa-image"></i> Event banner</h5></div>
+                <div class="ibox-content">
+                    <div class="event-banner-preview m-b-sm {{ $event->banner ? '' : 'is-empty' }}" id="banner-preview">
+                        @if($event->banner)
+                            <img src="{{ $event->bannerUrl() }}" alt="Current banner">
+                        @else
+                            <span class="text-muted"><i class="fa fa-image fa-2x d-block m-b-xs"></i>No banner yet</span>
+                        @endif
+                    </div>
+                    <div class="form-group m-b-xs">
+                        <label>{{ $event->banner ? 'Replace banner' : 'Upload a banner' }}</label>
+                        <input type="file" name="banner" id="banner-input" class="form-control" accept=".png,.jpg,.jpeg,.webp,.gif">
+                        <small class="text-muted">A wide image works best (e.g. 1920 × 480, the event tarpaulin or poster). Shown to judges on their event list, event page and score sheet, and on the event's pages. Max 8 MB.</small>
+                    </div>
+                    @if($event->banner)
+                        <label class="m-0 text-danger"><input type="checkbox" name="remove_banner" value="1"> Remove the banner</label>
+                    @endif
                 </div>
             </div>
         </div>

@@ -31,6 +31,14 @@ class ExportController extends Controller
         $carry = $results['carry'];
         $judges = $results['judges'];
         $xlsx = new XlsxWriter;
+        $logoFiles = $this->logoFiles($event);
+        // Logos sit on the right of each sheet's title rows (rows 1-5 are about 100 px tall).
+        $placeLogos = function (int $titleWidthPx) use ($xlsx, $logoFiles) {
+            $x = max(420, $titleWidthPx);
+            foreach ($logoFiles as $path) {
+                $x += $xlsx->addImage($path, $x, 6, 64) + 12;
+            }
+        };
 
         $head = fn (string $title) => [
             [['v' => $event->name, 's' => 'title']],
@@ -89,6 +97,7 @@ class ExportController extends Controller
             }
             $widths = array_merge([7, 6, 28, 26], array_fill(0, count($labels) - 4, 14));
             $xlsx->addSheet(($division ? $division.' ' : '').'Overall', array_merge($rows, $foot), $widths, 6);
+            $placeLogos(520);
         }
 
         // ---- Each category with every judge's score ----
@@ -110,6 +119,7 @@ class ExportController extends Controller
                 }
             }
             $xlsx->addSheet($cat->name, array_merge($rows, $foot), array_merge([7, 6, 28, 10], array_fill(0, count($labels) - 4, 14)), 6);
+            $placeLogos(420);
         }
 
         // ---- Raw criterion scores (for auditing) ----
@@ -126,6 +136,7 @@ class ExportController extends Controller
                 $s->contestant?->number, $s->contestant?->name, $s->contestant?->division, $s->judge?->name, (float) $s->score];
         }
         $xlsx->addSheet('Raw scores', array_merge($rows, $foot), [18, 22, 7, 6, 26, 10, 22, 9], 6);
+        $placeLogos(520);
 
         ActivityLog::record('event', 'Exported '.$round->name.' results to Excel.', $event);
 
@@ -145,11 +156,7 @@ class ExportController extends Controller
         $results = $tabulation->roundResults($round);
         $detailed = $request->boolean('detailed');
 
-        // dompdf without PHP's GD extension can only embed JPEG images.
-        $gd = extension_loaded('gd');
-        $logos = Setting::get('logos.on_print', '1') === '1'
-            ? $event->displayLogos()->filter(fn ($l) => $gd || preg_match('/\.jpe?g$/i', $l->file))->map(fn ($l) => public_path('uploads/'.$l->file))->values()
-            : collect();
+        $logos = collect($this->logoFiles($event));
 
         $html = view('admin.results.pdf', [
             'event' => $event, 'round' => $round, 'results' => $results, 'detailed' => $detailed,
@@ -173,6 +180,23 @@ class ExportController extends Controller
             'Content-Disposition' => ($request->boolean('inline') ? 'inline' : 'attachment').'; filename="'.$this->filename($round, 'pdf', $detailed ? 'detailed' : 'summary').'"',
             'Cache-Control' => 'no-store',
         ]);
+    }
+
+    /**
+     * Logo files (school, organization, LGU...) for this event's exports, in display order.
+     * PNG/GIF need PHP's GD extension inside the PDF engine; without it only JPEG logos are used.
+     */
+    protected function logoFiles(Event $event): array
+    {
+        if (Setting::get('logos.on_print', '1') !== '1') {
+            return [];
+        }
+        $gd = extension_loaded('gd');
+
+        return $event->displayLogos()
+            ->map(fn ($l) => public_path('uploads/'.$l->file))
+            ->filter(fn ($path) => is_file($path) && ($gd || preg_match('/\.jpe?g$/i', $path)))
+            ->values()->all();
     }
 
     protected function filename(Round $round, string $ext, string $suffix = 'results'): string

@@ -115,6 +115,24 @@
                     @endif
                 </div>
                 <ul class="nav navbar-top-links navbar-right">
+                    @if($user->canTabulate())
+                        <li class="dropdown notif-bell" id="notif-bell"
+                            data-feed="{{ route('admin.notifications') }}" data-read="{{ route('admin.notifications.read') }}">
+                            <a class="dropdown-toggle count-info" data-toggle="dropdown" href="#" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
+                                <i class="fa fa-bell"></i><span class="label label-danger notif-count" style="display:none">0</span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-right notif-menu">
+                                <div class="notif-head d-flex align-items-center">
+                                    <b>Judge activity</b>
+                                    <button type="button" class="btn btn-xs btn-white ml-auto notif-sound" title="Turn the chime on or off"><i class="fa fa-volume-up"></i></button>
+                                </div>
+                                <div class="notif-list"><div class="notif-empty text-muted">No activity yet.</div></div>
+                                @if($user->isAdmin())
+                                    <a class="notif-foot" href="{{ route('admin.history', ['tab' => 'activity']) }}">See all activity <i class="fa fa-angle-right"></i></a>
+                                @endif
+                            </div>
+                        </li>
+                    @endif
                     @if($user->isJudge())
                         <li><a href="{{ route('judge.dashboard') }}" class="{{ request()->routeIs('judge.dashboard') ? 'text-navy' : '' }}"><i class="fa fa-gavel"></i> My Events</a></li>
                     @else
@@ -165,7 +183,7 @@
         <div class="footer">
             <div class="float-right d-none d-md-block"><b>{{ config('app.name') }}</b> · {{ config('app.tagline') }}</div>
             <div class="credit"><img src="{{ asset('images/sti-alaminos-small.png') }}" alt="STI Alaminos" class="credit-logo">
-                &copy; {{ date('Y') }} <strong>Team Tabulators of STI Alaminos</strong>. All rights reserved.</div>
+                <span>&copy; {{ date('Y') }} <strong>Team Tabulators of STI Alaminos</strong>. All rights reserved.</span></div>
         </div>
     </div>
 </div>
@@ -175,8 +193,18 @@
 
 @if($user->isJudge())
     @php($liveEventId = optional(request()->route('event'))->id ?? optional(request()->route('category'))->event_id)
+    @php($screenLocked = \App\Support\ScreenLock::isLocked($user, $liveEventId))
+    <div class="screen-lock {{ $screenLocked ? 'show' : '' }}" id="screen-lock" role="alertdialog" aria-live="assertive" aria-labelledby="screen-lock-title">
+        <div class="screen-lock-box">
+            <div class="screen-lock-icon"><i class="fa fa-lock"></i></div>
+            <h2 id="screen-lock-title">Screen locked</h2>
+            <p>{{ \App\Support\ScreenLock::message() }}</p>
+            <small class="screen-lock-hint"><span class="online-dot is-online"></span> Waiting for the tabulator to unlock…</small>
+        </div>
+    </div>
     <script>
         window.TMS_LIVE = {
+            locked: @json($screenLocked),
             url: @json(route('judge.ping', array_filter(['event' => $liveEventId, 'page' => request()->route()?->getName()]))),
             token: @json(\App\Support\LiveDisplay::token(\App\Support\LiveDisplay::eventIdsFor($user, $liveEventId), $user))
         };

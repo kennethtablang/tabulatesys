@@ -14,6 +14,7 @@
 @endsection
 
 @section('content')
+@include('partials.event_banner', ['event' => $category->event, 'class' => 'event-banner-slim'])
 @if($preview)
     <div class="alert alert-info d-flex flex-wrap align-items-center" style="gap:8px">
         <span><i class="fa fa-eye"></i> <b>Preview</b>: this is how judges see <b>{{ $category->name }}</b> ({{ $category->event->name }}). Nothing here is saved.</span>
@@ -241,6 +242,12 @@
                 $(input).addClass('is-error');
                 toastr.warning(msg || 'Invalid score.');
                 showStatus();
+            } else if (xhr.status === 423 && xhr.responseJSON && xhr.responseJSON.screen_locked) {
+                // Screen locked by the tabulation team: keep the value, it is sent when the screen unlocks.
+                $(input).addClass('is-pending');
+                $('#screen-lock').addClass('show');
+                $('body').addClass('is-screen-locked');
+                $status.html('<i class="fa fa-lock"></i> Screen locked · ' + Object.keys(pending).length + ' score(s) waiting');
             } else if (xhr.status === 423 || xhr.status === 403) {
                 pending = {};
                 persist();

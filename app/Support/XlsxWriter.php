@@ -19,6 +19,27 @@ class XlsxWriter
     /** @var array<int, array{name: string, rows: array, widths: array, freeze: int}> */
     protected array $sheets = [];
 
+    /** @var array<int, array<int, array{path: string, x: int, y: int, w: int, h: int, type: int}>> images per sheet index (pixels) */
+    protected array $images = [];
+
+    protected int $drawings = 0;
+
+    /**
+     * Place an image (PNG/JPEG/GIF) on the most recently added sheet at absolute pixel
+     * coordinates, scaled to the given height. Returns the width used, so callers can line images up.
+     */
+    public function addImage(string $path, int $x, int $y, int $height): int
+    {
+        $info = @getimagesize($path);
+        if (! $this->sheets || ! $info || ! in_array($info[2], [IMAGETYPE_PNG, IMAGETYPE_JPEG, IMAGETYPE_GIF], true)) {
+            return 0;
+        }
+        $width = (int) round($info[0] * $height / max(1, $info[1]));
+        $this->images[count($this->sheets) - 1][] = ['path' => $path, 'x' => $x, 'y' => $y, 'w' => $width, 'h' => $height, 'type' => $info[2]];
+
+        return $width;
+    }
+
     public function addSheet(string $name, array $rows, array $widths = [], int $freezeRows = 0): static
     {
         $name = trim(preg_replace('/[\[\]\*\?\/\\\\:]/', ' ', $name)) ?: 'Sheet';
@@ -47,7 +68,6 @@ class XlsxWriter
         $zip->open($tmp, ZipArchive::OVERWRITE);
 
         $n = count($this->sheets);
-        $zip->addFromString('[Content_Types].xml', $this->contentTypes($n));
         $zip->addFromString('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             .'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
             .'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
@@ -55,9 +75,44 @@ class XlsxWriter
         $zip->addFromString('xl/workbook.xml', $this->workbook());
         $zip->addFromString('xl/_rels/workbook.xml.rels', $this->workbookRels($n));
         $zip->addFromString('xl/styles.xml', $this->styles());
+        $media = [];   // path => file name inside xl/media (each image stored once)
+        $this->drawings = 0;
         foreach ($this->sheets as $i => $sheet) {
-            $zip->addFromString('xl/worksheets/sheet'.($i + 1).'.xml', $this->sheet($sheet));
+            $hasDrawing = ! empty($this->images[$i]);
+            if ($hasDrawing) {
+                $id = ++$this->drawings;
+                $rels = '';
+                $anchors = '';
+                foreach ($this->images[$i] as $k => $img) {
+                    if (! isset($media[$img['path']])) {
+                        $ext = $img['type'] === IMAGETYPE_JPEG ? 'jpeg' : ($img['type'] === IMAGETYPE_GIF ? 'gif' : 'png');
+                        $media[$img['path']] = 'image'.(count($media) + 1).'.'.$ext;
+                        $zip->addFile($img['path'], 'xl/media/'.$media[$img['path']]);
+                    }
+                    $rid = 'rId'.($k + 1);
+                    $rels .= '<Relationship Id="'.$rid.'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/'.$media[$img['path']].'"/>';
+                    $x = $img['x'] * 9525;   // EMUs per pixel
+                    $y = $img['y'] * 9525;
+                    $cx = $img['w'] * 9525;
+                    $cy = $img['h'] * 9525;
+                    $anchors .= '<xdr:absoluteAnchor><xdr:pos x="'.$x.'" y="'.$y.'"/><xdr:ext cx="'.$cx.'" cy="'.$cy.'"/>'
+                        .'<xdr:pic><xdr:nvPicPr><xdr:cNvPr id="'.($k + 2).'" name="Logo '.($k + 1).'"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>'
+                        .'<xdr:blipFill><a:blip r:embed="'.$rid.'"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>'
+                        .'<xdr:spPr><a:xfrm><a:off x="'.$x.'" y="'.$y.'"/><a:ext cx="'.$cx.'" cy="'.$cy.'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic>'
+                        .'<xdr:clientData/></xdr:absoluteAnchor>';
+                }
+                $zip->addFromString('xl/drawings/drawing'.$id.'.xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                    .'<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+                    .$anchors.'</xdr:wsDr>');
+                $zip->addFromString('xl/drawings/_rels/drawing'.$id.'.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                    .'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'.$rels.'</Relationships>');
+                $zip->addFromString('xl/worksheets/_rels/sheet'.($i + 1).'.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                    .'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                    .'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing'.$id.'.xml"/></Relationships>');
+            }
+            $zip->addFromString('xl/worksheets/sheet'.($i + 1).'.xml', $this->sheet($sheet, $hasDrawing));
         }
+        $zip->addFromString('[Content_Types].xml', $this->contentTypes($n));
         $zip->close();
 
         $data = file_get_contents($tmp);
@@ -72,11 +127,17 @@ class XlsxWriter
         for ($i = 1; $i <= $n; $i++) {
             $sheets .= '<Override PartName="/xl/worksheets/sheet'.$i.'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
         }
+        for ($i = 1; $i <= $this->drawings; $i++) {
+            $sheets .= '<Override PartName="/xl/drawings/drawing'.$i.'.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>';
+        }
 
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             .'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
             .'<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
             .'<Default Extension="xml" ContentType="application/xml"/>'
+            .'<Default Extension="png" ContentType="image/png"/>'
+            .'<Default Extension="jpeg" ContentType="image/jpeg"/>'
+            .'<Default Extension="gif" ContentType="image/gif"/>'
             .'<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
             .'<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
             .$sheets.'</Types>';
@@ -135,7 +196,7 @@ class XlsxWriter
             .'</cellXfs></styleSheet>';
     }
 
-    protected function sheet(array $sheet): string
+    protected function sheet(array $sheet, bool $hasDrawing = false): string
     {
         $cols = '';
         foreach ($sheet['widths'] as $i => $w) {
@@ -175,8 +236,9 @@ class XlsxWriter
         }
 
         return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-            .'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
-            .$pane.($cols ? '<cols>'.$cols.'</cols>' : '').'<sheetData>'.$rows.'</sheetData></worksheet>';
+            .'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            .$pane.($cols ? '<cols>'.$cols.'</cols>' : '').'<sheetData>'.$rows.'</sheetData>'
+            .($hasDrawing ? '<drawing r:id="rId1"/>' : '').'</worksheet>';
     }
 
     protected function ref(int $col, int $row): string
