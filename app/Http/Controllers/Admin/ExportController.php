@@ -53,10 +53,10 @@ class ExportController extends Controller
 
         // ---- Overall standing, one sheet per division ----
         foreach ($results['divisions'] as $division => $data) {
-            $labels = ['Rank', 'No.', 'Contestant', 'Representing'];
+            $labels = ['Rank', 'Title', 'No.', 'Contestant', 'Representing'];
             if ($ranking) {
                 foreach ($judges as $j) {
-                    array_push($labels, $j->name, $j->name.' rank');
+                    array_push($labels, $j->name.' (Seat '.($j->pivot->seat ?? '-').')', $j->name.' rank');
                 }
                 if ($carry) {
                     $labels[] = $carry['from']->name.' avg';
@@ -75,7 +75,7 @@ class ExportController extends Controller
             $rows = array_merge($head(($division ? $division.' · ' : '').$round->name.' · Overall standing'), [$h($labels)]);
             foreach ($data['overall'] as $row) {
                 $c = $row['contestant'];
-                $line = [['v' => $row['rank'], 's' => 'bold'], $c->number, $c->name, $c->representing];
+                $line = [['v' => $row['rank'], 's' => 'bold'], ['v' => $row['title'] ?? null, 's' => 'bold'], $c->number, $c->name, $c->representing];
                 if ($ranking) {
                     foreach ($judges as $j) {
                         array_push($line, $n($row['judge_scores'][$j->id] ?? null), $n($row['judge_ranks'][$j->id] ?? null));
@@ -95,14 +95,14 @@ class ExportController extends Controller
                 }
                 $rows[] = $line;
             }
-            $widths = array_merge([7, 6, 28, 26], array_fill(0, count($labels) - 4, 14));
+            $widths = array_merge([7, 22, 6, 28, 26], array_fill(0, count($labels) - 5, 14));
             $xlsx->addSheet(($division ? $division.' ' : '').'Overall', array_merge($rows, $foot), $widths, 6);
-            $placeLogos(520);
+            $placeLogos(680);
         }
 
         // ---- Each category with every judge's score ----
         foreach ($results['categories'] as $cat) {
-            $labels = array_merge(['Rank', 'No.', 'Contestant', 'Division'], $judges->pluck('name')->all(), ['Average'], $ranking ? ['Rank sum'] : []);
+            $labels = array_merge(['Rank', 'No.', 'Contestant', 'Division'], $judges->map(fn ($j) => $j->name.' (Seat '.($j->pivot->seat ?? '-').')')->all(), ['Average'], $ranking ? ['Rank sum'] : []);
             $rows = array_merge($head($round->name.' · '.$cat->name.' ('.num($cat->weight).'% of round)'), [$h($labels)]);
             foreach ($results['divisions'] as $division => $data) {
                 foreach ($data['categories'][$cat->id] as $row) {

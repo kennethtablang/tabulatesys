@@ -176,4 +176,12 @@ class SettingsTest extends TestCase
             }
         }
     }
+    public function test_one_at_a_time_shows_a_large_portrait_photo(): void
+    {
+        $talent = Category::where('name', 'Talent')->firstOrFail();
+        $this->actingAs(User::where('username', 'judge1')->first())
+            ->get(route('judge.sheet', [$talent, 'layout' => 'focus']))->assertOk()
+            ->assertSee('sheet-photo-portrait', false)
+            ->assertDontSee('sheet-photo-xl', false);
+    }
 }

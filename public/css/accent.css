@@ -98,3 +98,20 @@ html[data-theme="dark"] .ibox-tools a.btn-white { color: var(--tms-text) !import
 .navy-bg, .navy-bg h1, .navy-bg h2, .navy-bg h3, .navy-bg h4, .navy-bg h5, .navy-bg span, .navy-bg small, .navy-bg i,
 html[data-theme="dark"] .navy-bg h1, html[data-theme="dark"] .navy-bg h2, html[data-theme="dark"] .navy-bg h3,
 html[data-theme="dark"] .navy-bg h4, html[data-theme="dark"] .navy-bg h5, html[data-theme="dark"] .navy-bg strong { color: var(--accent-on) !important; }
+
+/* Log out: a clear button with breathing room from the window edge */
+.navbar-top-links .logout-item { margin: 0 15px 0 4px; }
+.nav.navbar-top-links > li > a.btn-logout,
+.navbar-top-links li a.btn-logout {
+    display: inline-flex; align-items: center; gap: 7px; min-height: 0; padding: 7px 16px !important;
+    border: 1px solid #e3b4ba; border-radius: 20px; color: #c53444 !important; font-weight: 600; line-height: 1.2;
+    background: transparent; transition: background-color .15s, color .15s, border-color .15s;
+}
+.nav.navbar-top-links > li > a.btn-logout:hover, .nav.navbar-top-links > li > a.btn-logout:focus {
+    background-color: #cb4956 !important; border-color: #cb4956; color: #fff !important;
+}
+.nav.navbar-top-links > li > a.btn-logout:focus-visible { outline: 2px solid #cb4956; outline-offset: 2px; }
+html[data-theme="dark"] .nav.navbar-top-links > li > a.btn-logout { border-color: #6b3a41; color: #ff8591 !important; }
+html[data-theme="dark"] .nav.navbar-top-links > li > a.btn-logout:hover,
+html[data-theme="dark"] .nav.navbar-top-links > li > a.btn-logout:focus { background-color: #cb4956 !important; border-color: #cb4956; color: #fff !important; }
+@media (max-width: 576px) { .nav.navbar-top-links > li > a.btn-logout { padding: 7px 11px !important; } .navbar-top-links .logout-item { margin-right: 10px; } }

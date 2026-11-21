@@ -20,6 +20,7 @@
     td.r { text-align: right; }
     tr:nth-child(even) td { background: #f4f6f7; }
     .rank { font-weight: bold; }
+    .title { display: inline-block; font-weight: bold; color: #7a5a00; background: #fff4cc; border: 1px solid #e8c95a; border-radius: 3px; padding: 0 4px; font-size: 8.5px; }
     .total { font-weight: bold; }
     .sign { width: 100%; margin-top: 34px; border: 0; }
     .sign td { border: 0; text-align: center; padding: 0 10px; vertical-align: bottom; }
@@ -62,7 +63,7 @@
         <tr>
             <th class="c">Rank</th><th>Contestant</th>
             @if($ranking)
-                @foreach($results['judges'] as $judge)<th class="c">{{ $judge->name }}<br>score (rank)</th>@endforeach
+                @foreach($results['judges'] as $judge)<th class="c">{{ $judge->name }}<br>Seat {{ $judge->pivot->seat ?? '—' }} · score (rank)</th>@endforeach
                 @if($carry)<th class="c">{{ $carry['from']->name }}<br>({{ num($carry['percent']) }}%)</th>@endif
                 <th class="c">Rank sum</th><th class="c">Average</th>
             @else
@@ -76,7 +77,7 @@
         @foreach($data['overall'] as $row)
             <tr>
                 <td class="c rank">{{ $row['rank'] ?? '—' }}</td>
-                <td><b>#{{ $row['contestant']->number }}</b> {{ $row['contestant']->name }}@if($row['contestant']->representing)<br><span class="meta">{{ $row['contestant']->representing }}</span>@endif</td>
+                <td><b>#{{ $row['contestant']->number }}</b> {{ $row['contestant']->name }}@if(! empty($row['title'])) <span class="title">{{ $row['title'] }}</span>@endif @if($row['contestant']->representing)<br><span class="meta">{{ $row['contestant']->representing }}</span>@endif</td>
                 @if($ranking)
                     @foreach($results['judges'] as $judge)
                         <td class="c">{{ num($row['judge_scores'][$judge->id] ?? null) }} ({{ num($row['judge_ranks'][$judge->id] ?? null, 1) }})</td>
@@ -104,7 +105,7 @@
                 <thead>
                 <tr>
                     <th class="c">Rank</th><th>Contestant</th>
-                    @foreach($results['judges'] as $judge)<th class="c">{{ $judge->name }}</th>@endforeach
+                    @foreach($results['judges'] as $judge)<th class="c">{{ $judge->name }}<br>Seat {{ $judge->pivot->seat ?? '—' }}</th>@endforeach
                     <th class="c">Average</th>
                     @if($ranking)<th class="c">Rank sum</th>@endif
                 </tr>
@@ -130,7 +131,7 @@
     <table class="sign">
         <tr>
             @foreach($results['judges'] as $judge)
-                <td><div class="line">{{ $judge->name }}<br><small>Judge</small></div></td>
+                <td><div class="line">{{ $judge->name }}<br><small>Judge · Seat {{ $judge->pivot->seat ?? '—' }}</small></div></td>
             @endforeach
             <td><div class="line">{{ $tabulator }}<br><small>Tabulator</small></div></td>
         </tr>

@@ -53,6 +53,8 @@ Route::middleware('auth')->group(function () {
         Route::get('rounds/{round}/participants', [Admin\RoundController::class, 'participants'])->name('rounds.participants');
         Route::put('rounds/{round}/participants', [Admin\RoundController::class, 'saveParticipants'])->name('rounds.participants.save');
         Route::post('rounds/{round}/advance', [Admin\RoundController::class, 'advance'])->name('rounds.advance');
+        Route::get('rounds/{round}/titles', [Admin\RoundTitleController::class, 'edit'])->name('rounds.titles');
+        Route::put('rounds/{round}/titles', [Admin\RoundTitleController::class, 'update'])->name('rounds.titles.update');
 
         Route::post('rounds/{round}/categories', [Admin\CategoryController::class, 'store'])->name('categories.store');
         Route::put('categories/{category}', [Admin\CategoryController::class, 'update'])->name('categories.update');
@@ -72,6 +74,8 @@ Route::middleware('auth')->group(function () {
         Route::put('events/{event}/judges', [Admin\EventJudgeController::class, 'update'])->name('events.judges.update');
         Route::post('events/{event}/judges/generate', [Admin\EventJudgeController::class, 'generate'])->name('events.judges.generate');
         Route::delete('events/{event}/judges/{user}', [Admin\EventJudgeController::class, 'detach'])->name('events.judges.detach');
+        Route::put('events/{event}/judges-seats', [Admin\EventJudgeController::class, 'seats'])->name('events.judges.seats');
+        Route::post('events/{event}/judges/{user}/move', [Admin\EventJudgeController::class, 'move'])->name('events.judges.move');
         Route::post('events/{event}/tabulators', [Admin\EventJudgeController::class, 'generateTabulator'])->name('events.tabulators.store');
         Route::delete('events/{event}/tabulators/{user}', [Admin\EventJudgeController::class, 'destroyTabulator'])->name('events.tabulators.destroy');
         Route::post('users/{user}/reset-password', [Admin\EventJudgeController::class, 'resetPassword'])->name('users.reset-password');

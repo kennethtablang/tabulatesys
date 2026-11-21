@@ -29,10 +29,21 @@
                     <p class="text-muted m-b-none">No judges yet. Create their accounts below.</p>
                 @else
                     <table class="table table-hover m-b-none">
-                        <thead><tr><th>Judge</th><th>Username</th><th>Status</th><th class="text-right"></th></tr></thead>
+                        <thead><tr><th style="width:120px">Seat</th><th>Judge</th><th>Username</th><th>Status</th><th class="text-right"></th></tr></thead>
                         <tbody>
                         @foreach($event->judges as $judge)
                             <tr>
+                                <td style="white-space:nowrap">
+                                    <span class="seat-badge">Seat {{ $judge->pivot->seat }}</span>
+                                    <form method="POST" action="{{ route('admin.events.judges.move', [$event, $judge]) }}" class="d-inline">
+                                        @csrf <input type="hidden" name="direction" value="up">
+                                        <button class="btn btn-xs btn-white" title="Move to the seat before" @disabled($loop->first)><i class="fa fa-arrow-up"></i></button>
+                                    </form>
+                                    <form method="POST" action="{{ route('admin.events.judges.move', [$event, $judge]) }}" class="d-inline">
+                                        @csrf <input type="hidden" name="direction" value="down">
+                                        <button class="btn btn-xs btn-white" title="Move to the seat after" @disabled($loop->last)><i class="fa fa-arrow-down"></i></button>
+                                    </form>
+                                </td>
                                 <td><strong>{{ $judge->name }}</strong></td>
                                 <td><code>{{ $judge->username }}</code></td>
                                 <td>{!! $judge->is_active ? '<span class="text-navy">Active</span>' : '<span class="text-danger">Disabled</span>' !!}
@@ -63,6 +74,37 @@
                 @endif
             </div>
         </div>
+
+        @if($event->judges->count() > 1)
+            <form method="POST" action="{{ route('admin.events.judges.seats', $event) }}" id="seat-plan-form">
+                @csrf @method('PUT')
+                <div class="ibox">
+                    <div class="ibox-title"><h5><i class="fa fa-th-large"></i> Seating arrangement</h5>
+                        <div class="ibox-tools"><small class="text-muted">Drag the judges into their designated seats, then save.</small></div></div>
+                    <div class="ibox-content">
+                        <div class="seat-stage">Stage</div>
+                        <div class="seat-plan" id="seat-plan">
+                            @foreach($event->judges as $judge)
+                                <div class="seat-tile" draggable="true" data-id="{{ $judge->id }}" tabindex="0" aria-label="{{ $judge->name }}, seat {{ $judge->pivot->seat }}">
+                                    <span class="seat-no">Seat {{ $judge->pivot->seat }}</span>
+                                    <i class="fa fa-user seat-icon"></i>
+                                    <b>{{ $judge->name }}</b>
+                                    <input type="hidden" name="order[]" value="{{ $judge->id }}">
+                                    <span class="seat-move">
+                                        <button type="button" class="btn btn-xs btn-white js-seat-left" aria-label="Move left"><i class="fa fa-arrow-left"></i></button>
+                                        <button type="button" class="btn btn-xs btn-white js-seat-right" aria-label="Move right"><i class="fa fa-arrow-right"></i></button>
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="ibox-footer d-flex align-items-center">
+                        <small class="text-muted">Seat order is used for the judge columns on the monitor, results, print, PDF and Excel, and each judge sees their seat.</small>
+                        <button class="btn btn-primary btn-sm ml-auto"><i class="fa fa-check"></i> Save seat order</button>
+                    </div>
+                </div>
+            </form>
+        @endif
 
         <div class="ibox">
             <div class="ibox-title"><h5><i class="fa fa-user-plus"></i> Create judge accounts</h5></div>
@@ -153,3 +195,40 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    var plan = document.getElementById('seat-plan');
+    if (!plan) { return; }
+    var renumber = function () {
+        [].forEach.call(plan.querySelectorAll('.seat-tile'), function (tile, i) {
+            tile.querySelector('.seat-no').textContent = 'Seat ' + (i + 1);
+        });
+    };
+    var dragged = null;
+    plan.addEventListener('dragstart', function (e) {
+        dragged = e.target.closest('.seat-tile');
+        if (dragged) { dragged.classList.add('is-dragging'); e.dataTransfer.effectAllowed = 'move'; }
+    });
+    plan.addEventListener('dragend', function () { if (dragged) { dragged.classList.remove('is-dragging'); } dragged = null; renumber(); });
+    plan.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        var over = e.target.closest('.seat-tile');
+        if (!dragged || !over || over === dragged) { return; }
+        var r = over.getBoundingClientRect();
+        var after = (e.clientX - r.left) > r.width / 2;
+        plan.insertBefore(dragged, after ? over.nextSibling : over);
+    });
+    plan.addEventListener('click', function (e) {
+        var btn = e.target.closest('.js-seat-left, .js-seat-right');
+        if (!btn) { return; }
+        var tile = btn.closest('.seat-tile');
+        if (btn.classList.contains('js-seat-left') && tile.previousElementSibling) { plan.insertBefore(tile, tile.previousElementSibling); }
+        if (btn.classList.contains('js-seat-right') && tile.nextElementSibling) { plan.insertBefore(tile.nextElementSibling, tile); }
+        renumber();
+        btn.focus();
+    });
+})();
+</script>
+@endpush

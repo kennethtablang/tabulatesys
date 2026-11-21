@@ -14,7 +14,6 @@
 @endsection
 
 @section('content')
-@include('partials.event_banner', ['event' => $category->event, 'class' => 'event-banner-slim'])
 @if($preview)
     <div class="alert alert-info d-flex flex-wrap align-items-center" style="gap:8px">
         <span><i class="fa fa-eye"></i> <b>Preview</b>: this is how judges see <b>{{ $category->name }}</b> ({{ $category->event->name }}). Nothing here is saved.</span>
@@ -58,13 +57,23 @@
             @csrf
             <input type="hidden" name="action" value="save" id="form-action">
             @include('judge.layouts.'.($display['layout'] === 'compact' ? 'table' : $display['layout']))
-            @if($editable)
-                <div class="sheet-sticky-actions d-flex align-items-center">
-                    <span class="text-muted" id="completion"></span>
-                    <div class="ml-auto">
-                        <button type="submit" class="btn btn-white"><i class="fa fa-save"></i> Save Draft</button>
-                        <button type="button" class="btn btn-primary" id="btn-submit"><i class="fa fa-paper-plane"></i> Submit Final Scores</button>
-                    </div>
+            @php($focusNav = $display['layout'] === 'focus' && $contestants->count() > 0)
+            @if($editable || $focusNav)
+                <div class="sheet-sticky-actions d-flex align-items-center flex-wrap">
+                    @if($focusNav)
+                        <div class="focus-nav d-flex align-items-center">
+                            <button type="button" class="btn btn-white js-focus-prev" title="Previous contestant"><i class="fa fa-chevron-left"></i><span class="d-none d-md-inline"> Previous</span></button>
+                            <span class="focus-pos" id="focus-pos">1 of {{ $contestants->count() }}</span>
+                            <button type="button" class="btn btn-white js-focus-next" title="Next contestant"><span class="d-none d-md-inline">Next </span><i class="fa fa-chevron-right"></i></button>
+                        </div>
+                    @endif
+                    <span class="text-muted completion-text" id="completion"></span>
+                    @if($editable)
+                        <div class="ml-auto sheet-actions-buttons">
+                            <button type="submit" class="btn btn-white"><i class="fa fa-save"></i><span class="d-none d-sm-inline"> Save Draft</span></button>
+                            <button type="button" class="btn btn-primary" id="btn-submit"><i class="fa fa-paper-plane"></i> <span class="d-none d-sm-inline">Submit Final Scores</span><span class="d-sm-none">Submit</span></button>
+                        </div>
+                    @endif
                 </div>
             @else
                 <div class="m-t-sm text-muted" id="completion"></div>
@@ -158,7 +167,51 @@
         });
         var chip = document.querySelector('.sheet-chip[data-show-panel="#' + panel.id + '"]');
         if (chip && chip.scrollIntoView) { chip.scrollIntoView({block: 'nearest', inline: 'center'}); }
+        $(document).trigger('sheet:panel-shown');
     }
+    // One at a Time: Previous / Next in the bottom bar and the "3 of 10" label.
+    function updateFocusPos() {
+        var $active = $('.sheet-panel[data-panel-group="focus"].active');
+        if (!$active.length) { return; }
+        $('#focus-pos').text($active.data('position') + ' of ' + $active.data('count'));
+        $('.js-focus-prev').prop('disabled', !$active.prevAll('.sheet-panel[data-panel-group="focus"]').length);
+        $('.js-focus-next').prop('disabled', !$active.nextAll('.sheet-panel[data-panel-group="focus"]').length);
+    }
+    function focusMove(step) {
+        var $active = $('.sheet-panel[data-panel-group="focus"].active');
+        var $target = step > 0 ? $active.nextAll('.sheet-panel[data-panel-group="focus"]').first() : $active.prevAll('.sheet-panel[data-panel-group="focus"]').first();
+        if (!$target.length) { return; }
+        showPanel($target[0]);
+        var first = $target[0].querySelector('.score-input:enabled');
+        if (first) { first.focus({preventScroll: true}); }
+    }
+    // Size the portrait to exactly the space between its top and the bottom bar, so nothing needs scrolling.
+    function fitFocusPhoto() {
+        var bar = document.querySelector('.sheet-layout-focus .sheet-sticky-actions');
+        var img = document.querySelector('.sheet-panel[data-panel-group="focus"].active .sheet-photo-portrait');
+        if (!bar || !img) { return; }
+        var top = img.getBoundingClientRect().top + window.scrollY;
+        var avail = bar.getBoundingClientRect().top - top - 14;   // bar is fixed: its top is already a screen position
+        var min = window.innerWidth < 768 ? 160 : 220;
+        var form = document.querySelector('.sheet-layout-focus');
+        var h = Math.max(min, Math.round(avail));
+        form.style.setProperty('--focus-photo-h', h + 'px');
+        // Second pass: if the page still scrolls (spacing below the panel), shrink the photo by that much.
+        var overflow = document.documentElement.scrollHeight - window.innerHeight;
+        if (overflow > 0 && h - overflow >= min) {
+            form.style.setProperty('--focus-photo-h', (h - overflow) + 'px');
+        }
+    }
+    $(window).on('resize', fitFocusPhoto);
+    $(document).on('tms:layout-changed', fitFocusPhoto);
+    $(document).on('sheet:panel-shown', fitFocusPhoto);
+    $(function () { fitFocusPhoto(); setTimeout(fitFocusPhoto, 300); });
+
+    $(document).on('click', '.js-focus-prev', function () { focusMove(-1); });
+    $(document).on('click', '.js-focus-next', function () { focusMove(1); });
+    $(document).on('sheet:panel-shown', updateFocusPos);
+    updateFocusPos();
+
     $(document).on('click', '[data-show-panel]', function () {
         var panel = document.querySelector($(this).attr('data-show-panel'));
         showPanel(panel);

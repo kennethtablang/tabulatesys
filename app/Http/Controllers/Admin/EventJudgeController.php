@@ -25,6 +25,7 @@ class EventJudgeController extends Controller
     {
         $ids = User::judges()->whereIn('id', (array) $request->input('judges', []))->pluck('id');
         $event->judges()->sync($ids);
+        $event->normalizeSeats();
         ActivityLog::record('account', $ids->count().' judge(s) assigned to the event.', $event);
 
         return back()->with('success', $ids->count().' judge(s) assigned to '.$event->name.'.');
@@ -51,9 +52,37 @@ class EventJudgeController extends Controller
     public function detach(Event $event, User $user)
     {
         $event->judges()->detach($user->id);
+        $event->normalizeSeats();   // close the gap
         ActivityLog::record('account', 'Removed judge '.$user->name.' ('.$user->username.') from the event.', $event);
 
         return back()->with('success', $user->name.' was removed from '.$event->name.'. Their account still exists.');
+    }
+
+    /** Save the seating plan: judges in seat order (array of user ids). */
+    public function seats(Request $request, Event $event)
+    {
+        $data = $request->validate(['order' => ['required', 'array'], 'order.*' => ['integer']]);
+        $event->arrangeSeats($data['order']);
+        ActivityLog::record('account', 'Rearranged the seats of the judges: '.$event->judges()->get()->map(fn ($j) => $j->pivot->seat.'. '.$j->name)->join(', ').'.', $event);
+        \App\Support\LiveDisplay::refresh($event);   // judges' screens show their new seat
+
+        return back()->with('success', 'Seat order saved.');
+    }
+
+    /** Move one judge one seat up or down. */
+    public function move(Request $request, Event $event, User $user)
+    {
+        $order = $event->judges()->pluck('users.id')->all();
+        $i = array_search($user->id, $order, true);
+        abort_if($i === false, 404);
+        $j = $request->input('direction') === 'up' ? $i - 1 : $i + 1;
+        if (isset($order[$j])) {
+            [$order[$i], $order[$j]] = [$order[$j], $order[$i]];
+            $event->arrangeSeats($order);
+            \App\Support\LiveDisplay::refresh($event);
+        }
+
+        return back()->with('success', $user->name.' is now in seat '.$event->seatOf($user).'.');
     }
 
     public function generateTabulator(Request $request, Event $event, AccountGenerator $accounts)

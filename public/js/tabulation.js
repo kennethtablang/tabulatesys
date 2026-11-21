@@ -170,6 +170,18 @@
         });
     }
 
+    // Judge screens: the footer is pinned to the bottom; tell the CSS its height so the
+    // Save / Submit bar sits exactly on top of it.
+    if (document.body.classList.contains('judge-mode')) {
+        var setFooterHeight = function () {
+            var footer = document.querySelector('.footer');
+            if (footer) { document.body.style.setProperty('--footer-h', footer.offsetHeight + 'px'); }
+            $(document).trigger('tms:layout-changed');
+        };
+        setFooterHeight();
+        $(window).on('resize load', setFooterHeight);
+    }
+
     // Chart tooltips: any element with data-tip (works on hover and keyboard focus).
     var $tip = $('<div class="viz-tooltip" role="tooltip"></div>').appendTo('body').hide();
     function showTip(el, x, y) {

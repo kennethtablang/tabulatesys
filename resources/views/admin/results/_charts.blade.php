@@ -123,7 +123,7 @@ Category average: ".$fmt($row['categories'][$s['ids'][0]]['average']) : '' }}"><
                     @else
                         <table class="viz-heat">
                             <thead>
-                            <tr><th></th>@foreach($judges as $judge)<th>{{ $judge->name }}</th>@endforeach<th>{{ $ranking ? 'Rank sum' : 'Average' }}</th></tr>
+                            <tr><th></th>@foreach($judges as $judge)<th><small class="d-block">Seat {{ $judge->pivot->seat ?? '—' }}</small>{{ $judge->name }}</th>@endforeach<th>{{ $ranking ? 'Rank sum' : 'Average' }}</th></tr>
                             </thead>
                             <tbody>
                             @foreach($rows as $row)
@@ -178,12 +178,15 @@ Judge rank: ".$fmt($row['judge_ranks'][$judge->id], 1) : '' }}">{{ $fmt($v, 1) }
             </div>
         @endif
 
-        {{-- ================= Top 3: podium tiles ================= --}}
+        {{-- ================= Top N: podium for places 1-3, cards for the other finalists ================= --}}
         @if($chart === 'podium')
             @if($loop->first)@include('partials.event_banner', ['event' => $event])@endif
-            @php($top = collect($rows)->filter(fn ($r) => $r['rank'] !== null && $r['rank'] <= 3)->values())
+            @php($topN = $topN ?? 3)
+            @php($finalists = collect($rows)->filter(fn ($r) => $r['rank'] !== null && $r['rank'] <= $topN)->values())
+            @php($top = $finalists->filter(fn ($r) => $r['rank'] <= 3)->values())
+            @php($rest = $finalists->filter(fn ($r) => $r['rank'] > 3)->values())
             <div class="ibox">
-                <div class="ibox-title"><h5><i class="fa fa-trophy text-warning"></i> {{ $division ? $division.' · ' : '' }}Top 3 · {{ $round->name }}</h5>
+                <div class="ibox-title"><h5><i class="fa fa-trophy text-warning"></i> {{ $division ? $division.' · ' : '' }}Top {{ $topN }} · {{ $round->name }}</h5>
                     <div class="ibox-tools"><small class="text-muted">updated {{ now()->format('h:i:s A') }}</small></div></div>
                 <div class="ibox-content">
                     @if($top->isEmpty())
@@ -194,6 +197,7 @@ Judge rank: ".$fmt($row['judge_ranks'][$judge->id], 1) : '' }}">{{ $fmt($v, 1) }
                                 <div class="viz-podium-tile viz-place-{{ $row['rank'] }}">
                                     <span class="rank-badge rank-{{ $row['rank'] }}">{{ $row['rank'] }}</span>
                                     <img src="{{ $row['contestant']->photoUrl() }}" alt="" class="viz-podium-photo">
+                                    @if(! empty($row['title']))<div class="placement-title viz-title">{{ $row['title'] }}</div>@endif
                                     <div class="viz-podium-name">{{ $label($row['contestant']) }}</div>
                                     @if($row['contestant']->representing)<small class="text-muted">{{ $row['contestant']->representing }}</small>@endif
                                     <div class="viz-podium-score">{{ $ranking ? $fmt($row['rank_sum'], 1) : $fmt($row['average']) }}</div>
@@ -201,6 +205,22 @@ Judge rank: ".$fmt($row['judge_ranks'][$judge->id], 1) : '' }}">{{ $fmt($v, 1) }
                                 </div>
                             @endforeach
                         </div>
+                        @if($rest->isNotEmpty())
+                            <div class="viz-finalists">
+                                @foreach($rest as $row)
+                                    <div class="viz-finalist">
+                                        <span class="rank-badge">{{ $row['rank'] }}</span>
+                                        <img src="{{ $row['contestant']->photoUrl() }}" alt="" class="contestant-thumb">
+                                        <div class="viz-finalist-text">
+                                            @if(! empty($row['title']))<span class="placement-title">{{ $row['title'] }}</span>@endif
+                                            <b class="d-block">{{ $label($row['contestant']) }}</b>
+                                            @if($row['contestant']->representing)<small class="text-muted">{{ $row['contestant']->representing }}</small>@endif
+                                        </div>
+                                        <div class="viz-finalist-score">{{ $ranking ? $fmt($row['rank_sum'], 1) : $fmt($row['average']) }}</div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
                     @endif
                 </div>
             </div>

@@ -43,6 +43,9 @@
                 <a href="{{ route('admin.rounds.participants', $round) }}" class="btn btn-xs btn-white">
                     <i class="fa fa-users"></i> Contestants ({{ $round->contestants->count() }})
                 </a>
+                <a href="{{ route('admin.rounds.titles', $round) }}" class="btn btn-xs btn-white" title="Titles for the top finishers (Winner, 1st Runner-Up...)">
+                    <i class="fa fa-trophy"></i> Titles{{ $round->titles()->count() ? ' ('.$round->titles()->max('rank').')' : '' }}
+                </a>
                 <button class="btn btn-xs btn-primary" data-toggle="modal" data-target="#categoryModal"
                         data-action="{{ route('admin.categories.store', $round) }}" data-title="Add Category to {{ $round->name }}"
                         data-values="{{ json_encode(['weight' => max(0, 100 - $roundWeight), 'sequence' => $round->categories->max('sequence') + 1]) }}">

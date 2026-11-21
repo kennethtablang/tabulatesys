@@ -111,9 +111,43 @@ class Event extends Model
         return $this->hasMany(Contestant::class)->orderBy('division')->orderBy('number');
     }
 
+    /** Judges in seat order (their designated seats at the event). */
     public function judges()
     {
-        return $this->belongsToMany(User::class, 'event_judge', 'event_id', 'user_id')->orderBy('name');
+        return $this->belongsToMany(User::class, 'event_judge', 'event_id', 'user_id')
+            ->withPivot('seat')
+            ->orderByRaw('COALESCE(event_judge.seat, 9999)')
+            ->orderBy('users.name');
+    }
+
+    /** Renumber seats 1..n in the current order (new judges go to the next free seat). */
+    public function normalizeSeats(): void
+    {
+        foreach ($this->judges()->get() as $i => $judge) {
+            if ((int) $judge->pivot->seat !== $i + 1) {
+                $this->judges()->updateExistingPivot($judge->id, ['seat' => $i + 1]);
+            }
+        }
+        $this->unsetRelation('judges');
+    }
+
+    /** Seat the judges in exactly this order (array of user ids); judges left out keep their relative order after them. */
+    public function arrangeSeats(array $userIds): void
+    {
+        $current = $this->judges()->pluck('users.id')->all();
+        $order = array_values(array_unique(array_merge(array_values(array_intersect(array_map('intval', $userIds), $current)), $current)));
+        foreach ($order as $i => $id) {
+            $this->judges()->updateExistingPivot($id, ['seat' => $i + 1]);
+        }
+        $this->unsetRelation('judges');
+    }
+
+    /** Seat number of a judge at this event, or null. */
+    public function seatOf(User $judge): ?int
+    {
+        $seat = \Illuminate\Support\Facades\DB::table('event_judge')->where(['event_id' => $this->id, 'user_id' => $judge->id])->value('seat');
+
+        return $seat === null ? null : (int) $seat;
     }
 
     public function divisions(): array

@@ -22,14 +22,16 @@ class ResultController extends Controller
 
         // Table, or one of the chart views (remembered per viewer in the browser).
         $chart = in_array($request->query('view'), self::CHARTS, true) ? $request->query('view') : 'table';
+        $topN = $request->integer('top') ?: ($round ? max(3, $round->titledPlaces()) : 3);
+        $topN = max(1, min(50, $topN));
 
         if ($request->ajax()) {
             return $chart === 'table'
                 ? view('admin.results._tables', compact('event', 'round', 'results'))
-                : view('admin.results._charts', compact('event', 'round', 'results', 'chart'));
+                : view('admin.results._charts', compact('event', 'round', 'results', 'chart', 'topN'));
         }
 
-        return view('admin.results.index', compact('event', 'round', 'results', 'version', 'chart'));
+        return view('admin.results.index', compact('event', 'round', 'results', 'version', 'chart', 'topN'));
     }
 
     public function monitor(Request $request, Event $event, TabulationService $tabulation)

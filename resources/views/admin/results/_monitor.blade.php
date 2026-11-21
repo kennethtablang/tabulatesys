@@ -15,7 +15,7 @@
                         @foreach($event->judges as $judge)
                             @php($online = \App\Support\LiveDisplay::isOnline($judge))
                             @php($judgeLocked = \App\Support\ScreenLock::isLocked($judge, $event->id))
-                            <th>{{ $judge->name }}<br>
+                            <th><span class="seat-badge seat-badge-sm">Seat {{ $judge->pivot->seat ?? '—' }}</span><br>{{ $judge->name }}<br>
                                 <small class="{{ $online ? 'text-navy' : 'text-muted' }}" title="{{ $online ? 'Screen connected' : 'Not connected right now' }}">
                                     <span class="online-dot {{ $online ? 'is-online' : '' }}"></span> {{ $online ? 'Online' : 'Offline' }}
                                 </small>

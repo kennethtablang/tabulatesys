@@ -26,6 +26,7 @@ class AccountGenerator
             'is_active' => true,
         ]);
         $event->judges()->syncWithoutDetaching([$user->id]);
+        $event->normalizeSeats();   // the new judge takes the next free seat
 
         return $this->slip($user, $password, $event);
     }

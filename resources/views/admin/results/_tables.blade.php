@@ -26,7 +26,7 @@
                         <th>Contestant</th>
                         @if($ranking)
                             @foreach($results['judges'] as $judge)
-                                <th class="text-center">{{ $judge->name }}<br><small class="text-muted">score (rank)</small></th>
+                                <th class="text-center"><small class="text-muted d-block">Seat {{ $judge->pivot->seat ?? '—' }}</small>{{ $judge->name }}<br><small class="text-muted">score (rank)</small></th>
                             @endforeach
                             @if($carry)<th class="text-center">{{ $carry['from']->name }}<br><small class="text-muted">avg · {{ num($carry['percent']) }}% bearing</small></th>@endif
                             <th class="text-center total-col">Rank Sum</th>
@@ -50,6 +50,7 @@
                             <td>
                                 <img src="{{ $row['contestant']->photoUrl() }}" class="contestant-thumb m-r-xs" alt="">
                                 <b>#{{ $row['contestant']->number }}</b> {{ $row['contestant']->name }}
+                                @if(! empty($row['title']))<span class="placement-title m-l-xs"><i class="fa fa-trophy"></i> {{ $row['title'] }}</span>@endif
                                 @if($row['contestant']->representing)<br><small class="text-muted" style="margin-left:48px">{{ $row['contestant']->representing }}</small>@endif
                             </td>
                             @if($ranking)
@@ -98,7 +99,7 @@
                                 <thead>
                                 <tr>
                                     <th class="text-center">Rank</th><th>Contestant</th>
-                                    @foreach($results['judges'] as $judge)<th class="text-center">{{ $judge->name }}</th>@endforeach
+                                    @foreach($results['judges'] as $judge)<th class="text-center"><small class="text-muted d-block">Seat {{ $judge->pivot->seat ?? '—' }}</small>{{ $judge->name }}</th>@endforeach
                                     <th class="text-center total-col">Average</th>
                                     @if($ranking)<th class="text-center">Rank Sum</th>@endif
                                 </tr>

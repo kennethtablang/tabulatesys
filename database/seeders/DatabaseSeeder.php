@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             'description' => 'Annual search for Mr. and Ms. Foundation Day.',
         ]);
         $pageant->judges()->sync($judges->take(3)->pluck('id'));
+        $pageant->normalizeSeats();
 
         $prelim = $pageant->rounds()->create(['name' => 'Preliminary Round', 'sequence' => 1]);
         $final = $pageant->rounds()->create(['name' => 'Final Round (Top 3)', 'sequence' => 2]);
@@ -75,6 +76,7 @@ class DatabaseSeeder extends Seeder
             'event_date' => now()->toDateString(), 'scoring_method' => 'ranking', 'status' => 'ongoing',
         ]);
         $singing->judges()->sync($judges->pluck('id'));
+        $singing->normalizeSeats();
         $round = $singing->rounds()->create(['name' => 'Grand Finals', 'sequence' => 1]);
         $perf = $round->categories()->create(['event_id' => $singing->id, 'name' => 'Performance', 'weight' => 100, 'sequence' => 1, 'status' => 'open']);
         foreach ([['Voice Quality', 40], ['Interpretation', 30], ['Stage Presence', 20], ['Audience Impact', 10]] as $j => [$cname, $w]) {

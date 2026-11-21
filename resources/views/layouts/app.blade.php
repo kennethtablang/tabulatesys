@@ -108,7 +108,9 @@
                     @if($user->isJudge())
                         <a href="{{ route('judge.dashboard') }}" class="judge-brand">
                             @include('partials.brand', ['size' => 38, 'iconOnly' => true])
-                            <span><b>{{ $user->name }}</b><small class="d-block text-muted">Judge · {{ config('app.name') }} {{ config('app.subtitle') }}</small></span></a>
+                            <span><b>{{ $user->name }}</b>@php($mySeatEvent = request()->route('event') ?? optional(request()->route('category'))->event)
+                            @php($mySeat = $mySeatEvent instanceof \App\Models\Event ? $mySeatEvent->seatOf($user) : null)
+                            <small class="d-block text-muted">Judge{!! $mySeat ? ' · <b class="judge-seat">Seat '.$mySeat.'</b>' : '' !!} · {{ config('app.name') }} {{ config('app.subtitle') }}</small></span></a>
                     @else
                         <a class="navbar-minimalize minimalize-styl-2 btn btn-primary" href="#"><i class="fa fa-bars"></i></a>
                         <span class="navbar-brand-text d-none d-md-inline-block">{{ config('app.name') }} <small class="text-muted font-weight-normal">· {{ config('app.subtitle') }}</small></span>
@@ -139,13 +141,14 @@
                         <li><span class="m-r-sm text-muted welcome-message">{{ now()->format('l, F d, Y') }}</span></li>
                     @endif
                     <li><a href="#" class="theme-toggle" data-theme-toggle title="Switch to dark mode"><i class="fa fa-moon-o theme-icon-dark"></i><i class="fa fa-sun-o theme-icon-light"></i><span class="d-none d-sm-inline"> Theme</span></a></li>
-                    <li><a href="#" class="js-logout"><i class="fa fa-sign-out"></i> Log out</a></li>
+                    <li class="logout-item"><a href="#" class="js-logout btn-logout" title="Log out"><i class="fa fa-sign-out"></i><span class="d-none d-sm-inline">Log out</span></a></li>
                 </ul>
             </nav>
         </div>
 
         @php($headingEvent = request()->route('event') ?? optional(request()->route('category'))->event ?? optional(request()->route('round'))->event)
-        @php($headingLogos = $headingEvent instanceof \App\Models\Event ? $headingEvent->displayLogos() : \App\Models\Logo::global())
+        {{-- Uploaded logos (school, organization, LGU) are for the judges' screens only, not the admin / tabulator panel. --}}
+        @php($headingLogos = ! ($user->isJudge() || ($preview ?? false)) ? collect() : ($headingEvent instanceof \App\Models\Event ? $headingEvent->displayLogos() : \App\Models\Logo::global()))
         <div class="row wrapper border-bottom white-bg page-heading page-heading-flex {{ $headingLogos->isNotEmpty() ? 'has-logos' : '' }}"
              style="--heading-logo-h: {{ \App\Models\Logo::headingHeight() }}px">
             <div class="heading-main">

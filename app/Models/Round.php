@@ -29,6 +29,29 @@ class Round extends Model
         return $this->hasMany(Category::class)->orderBy('sequence');
     }
 
+    public function titles()
+    {
+        return $this->hasMany(RoundTitle::class)->orderBy('rank');
+    }
+
+    /** Title for a placement, preferring the division's own title over the "all divisions" one. */
+    public function titleFor(?int $rank, ?string $division): ?string
+    {
+        if (! $rank) {
+            return null;
+        }
+        $titles = $this->relationLoaded('titles') ? $this->titles : $this->titles()->get();
+        $own = $division ? $titles->first(fn ($t) => $t->rank === $rank && $t->division === $division) : null;
+
+        return ($own ?? $titles->first(fn ($t) => $t->rank === $rank && $t->division === null))?->title;
+    }
+
+    /** How many places have a title (used as the default "Top N"). */
+    public function titledPlaces(): int
+    {
+        return (int) $this->titles()->max('rank');
+    }
+
     public function contestants()
     {
         return $this->belongsToMany(Contestant::class, 'contestant_round')->orderBy('division')->orderBy('number');

@@ -69,7 +69,7 @@ class BannerAndNotificationsTest extends TestCase
         $judge = User::where('username', 'judge1')->first();
         $this->actingAs($judge)->get(route('judge.dashboard'))->assertSee($url);
         $this->get(route('judge.event', $event))->assertSee($url);
-        $this->get(route('judge.sheet', $talent))->assertSee('event-banner-slim', false)->assertSee($url);
+        $this->get(route('judge.sheet', $talent))->assertOk()->assertDontSee($url);   // not on the score sheet (keeps its layout clean)
 
         // Replace: the old file is deleted.
         $this->actingAs($this->admin())->put(route('admin.events.update', $event), $this->eventPayload($event, ['banner' => $png()]));

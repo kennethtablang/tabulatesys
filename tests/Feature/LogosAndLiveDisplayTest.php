@@ -206,4 +206,27 @@ class LogosAndLiveDisplayTest extends TestCase
         $other = Category::where('name', 'Talent')->firstOrFail();
         $this->get(route('judge.sheet', $other))->assertDontSee($logo->url());
     }
+    public function test_uploaded_logos_show_on_judge_screens_only(): void
+    {
+        $logo = $this->upload('ABC University', everyEvent: true);
+        $talent = Category::where('name', 'Talent')->firstOrFail();
+        $event = $talent->event;
+
+        // Admin panel: no logos in the page heading.
+        $this->actingAs($this->admin());
+        foreach ([route('admin.dashboard'), route('admin.events.show', $event), route('admin.events.results', $event), route('admin.events.monitor', $event)] as $url) {
+            $this->get($url)->assertOk()->assertDontSee('logo-band-heading', false);
+        }
+        // ...except the "Preview judge view", which shows exactly what judges see.
+        $this->get(route('admin.settings.preview', ['category' => $talent->id]))->assertSee('logo-band-heading', false)->assertSee($logo->url());
+
+        // Tabulator panel: no logos either.
+        $this->actingAs(User::where('username', 'tabulator')->first())->get(route('admin.events.results', $event))->assertDontSee('logo-band-heading', false);
+
+        // Judges: logos on the right of the heading.
+        $judge = User::where('username', 'judge1')->first();
+        $this->actingAs($judge)->get(route('judge.sheet', $talent))->assertSee('logo-band-heading', false)->assertSee($logo->url());
+        $this->get(route('judge.event', $event))->assertSee('logo-band-heading', false);
+        $this->get(route('judge.dashboard'))->assertSee('logo-band-heading', false);
+    }
 }

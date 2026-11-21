@@ -49,7 +49,7 @@ class TabulationService
      */
     public function roundResults(Round $round): array
     {
-        $round->loadMissing(['event.judges', 'categories.criteria', 'contestants']);
+        $round->loadMissing(['event.judges', 'categories.criteria', 'contestants', 'titles']);
         $event = $round->event;
         $judgeIds = $event->judges->pluck('id')->all();
         $categories = $round->categories;
@@ -147,7 +147,11 @@ class TabulationService
             unset($row);
 
             $divisions[$division] = [
-                'overall' => $this->sortByRank($this->assignRanks($rows, $event->scoring_method)),
+                'overall' => array_map(function (array $row) use ($round, $division) {
+                    $row['title'] = $round->titleFor($row['rank'], $division !== '' ? $division : null);
+
+                    return $row;
+                }, $this->sortByRank($this->assignRanks($rows, $event->scoring_method))),
                 'categories' => array_map(fn ($r) => $this->sortByRank($r), $categoryResults),
             ];
         }
